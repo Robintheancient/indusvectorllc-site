@@ -12,8 +12,7 @@ Static website for Indus Vector LLC. Plain HTML and CSS: no WordPress, no build 
 | `site/` | The website. Each page is `folder/index.html` so URLs match the old WordPress URLs |
 | `site/css/style.css` | All styles |
 | `site/images/` | Images (see `site/images/README.md` for the files to copy from the WordPress backup) |
-| `infra/cloudfront-function.js` | Viewer-request function: www → apex redirect, `/path/` → `/path/index.html`, old-URL redirects |
-| `infra/*.json` | IAM trust policy, deploy permissions, S3 bucket policy (fill in account and distribution IDs) |
+| `infra/site-stack.yaml` | CloudFormation: private S3 bucket, CloudFront + OAC, security headers, URL-rewrite function, GitHub OIDC deploy role |
 | `.github/workflows/deploy.yml` | Deploy to S3 + CloudFront |
 
 ## Edit the site
@@ -28,10 +27,12 @@ Static website for Indus Vector LLC. Plain HTML and CSS: no WordPress, no build 
 - **Contact form:** Formspree form `mgakqdrl`; change the recipient in the Formspree dashboard.
 - **Images:** already in `site/images/` (web-sized). Add new ones there.
 
-## Turn on deploys (one time, in AWS + GitHub)
+## AWS setup (one time)
 
-1. AWS IAM → Identity providers → add OpenID Connect provider `https://token.actions.githubusercontent.com`, audience `sts.amazonaws.com`.
-2. Create role `github-deploy-indusvector` with trust policy `infra/github-oidc-trust-policy.json` and inline policy `infra/github-deploy-permissions.json` (replace the placeholders). Only the `main` branch of this repo can assume it.
-3. In this repo: Settings → Secrets and variables → Actions → **Variables**: add `AWS_DEPLOY_ROLE_ARN` and `CF_DISTRIBUTION_ID`.
+1. CloudFormation (region **us-east-1**) → Create stack → upload `infra/site-stack.yaml`, stack name `indusvectorllc-site`.
+   Leave `CertificateArn` empty on the first launch. If the account already has the GitHub identity provider, set `CreateGitHubOIDCProvider` to `false`.
+2. Open the `TestUrl` output to check the site (after the first deploy).
+3. In this repo: Settings → Secrets and variables → Actions → **Variables**: add `AWS_DEPLOY_ROLE_ARN` and `CF_DISTRIBUTION_ID` from the stack outputs.
+4. Later, for the real domain: request an ACM certificate in us-east-1 for the domain and `www`, then update the stack with its ARN in `CertificateArn`.
 
-Until those variables exist, the deploy job is skipped.
+Until the repo variables exist, the deploy job is skipped. Only the `main` branch of this repo can assume the deploy role.
