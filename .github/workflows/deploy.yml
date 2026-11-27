@@ -1,0 +1,43 @@
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/deploy.yml"]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # OIDC: short-lived AWS credentials, no stored keys
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Skip until AWS is set up: add repo variables AWS_DEPLOY_ROLE_ARN and CF_DISTRIBUTION_ID
+    if: ${{ vars.AWS_DEPLOY_ROLE_ARN != '' }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - uses: aws-actions/configure-aws-credentials@45666896f5d8e0f10ae255413f3a4cdd03bdc8f5 # v6.3.1
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Upload HTML (short cache)
+        run: >
+          aws s3 sync ./site s3://indusvectorllc-com-site --delete
+          --exclude "*" --include "*.html" --include "*.xml" --include "*.txt"
+          --cache-control "public, max-age=300"
+
+      - name: Upload assets (long cache)
+        run: >
+          aws s3 sync ./site s3://indusvectorllc-com-site --delete
+          --exclude "*.html" --exclude "*.xml" --exclude "*.txt" --exclude "*.md"
+          --cache-control "public, max-age=86400"
+
+      - name: Refresh CloudFront
+        run: aws cloudfront create-invalidation --distribution-id "${{ vars.CF_DISTRIBUTION_ID }}" --paths "/*"

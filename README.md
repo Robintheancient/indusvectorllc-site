@@ -25,8 +25,8 @@ Static website for Indus Vector LLC. Plain HTML and CSS: no WordPress, no build 
 ## Placeholders to fill in
 
 - **Phone:** search for `PHONE:` in `site/` (footer on every page and the Contact page) and uncomment the line.
-- **Contact form:** in `site/contact/index.html`, replace `YOUR_FORM_ID` with the Formspree form ID.
-- **Images:** copy the files listed in `site/images/README.md`.
+- **Contact form:** Formspree form `mgakqdrl`; change the recipient in the Formspree dashboard.
+- **Images:** already in `site/images/` (web-sized). Add new ones there.
 
 ## Turn on deploys (one time, in AWS + GitHub)
 
