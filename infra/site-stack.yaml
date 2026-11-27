@@ -8,7 +8,7 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label: { default: "Website" }
-        Parameters: [DomainName, BucketName, CertificateArn]
+        Parameters: [DomainName, BucketName, CertificateArn, ProjectTag]
       - Label: { default: "GitHub deploys" }
         Parameters: [GitHubRepo, GitHubBranch, CreateGitHubOIDCProvider]
 
@@ -35,6 +35,10 @@ Parameters:
     Type: String
     Default: main
     Description: Only this branch can deploy.
+  ProjectTag:
+    Type: String
+    Default: indusvectorllc
+    Description: Value of the "Project" cost-allocation tag put on every taggable resource.
   CreateGitHubOIDCProvider:
     Type: String
     AllowedValues: ["true", "false"]
@@ -55,6 +59,9 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       BucketName: !Ref BucketName
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -181,6 +188,9 @@ Resources:
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
       DistributionConfig:
         Comment: !Sub "${DomainName} static site"
         Enabled: true
@@ -232,6 +242,9 @@ Resources:
     Condition: CreateOIDC
     Properties:
       Url: https://token.actions.githubusercontent.com
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
       ClientIdList: [sts.amazonaws.com]
       ThumbprintList:
         - 6938fd4d98bab03faadb97b34396831e3780aea1
@@ -241,6 +254,9 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: github-deploy-indusvector
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
       Description: !Sub "GitHub Actions deploy for ${GitHubRepo} (${GitHubBranch} only)"
       MaxSessionDuration: 3600
       AssumeRolePolicyDocument:
