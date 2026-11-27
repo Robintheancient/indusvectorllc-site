@@ -35,4 +35,9 @@ Static website for Indus Vector LLC. Plain HTML and CSS: no WordPress, no build 
 3. In this repo: Settings → Secrets and variables → Actions → **Variables**: add `AWS_DEPLOY_ROLE_ARN` and `CF_DISTRIBUTION_ID` from the stack outputs.
 4. Later, for the real domain: request an ACM certificate in us-east-1 for the domain and `www`, then update the stack with its ARN in `CertificateArn`.
 
+## Cost tracking
+
+Every taggable resource carries the tag `Project=indusvectorllc` (S3, CloudFront, IAM role, OIDC provider; add it by hand to the Route 53 hosted zone).
+Billing → Cost allocation tags → activate `Project` (takes up to 24 h to appear), then filter the budget on `Project = indusvectorllc`.
+
 Until the repo variables exist, the deploy job is skipped. Only the `main` branch of this repo can assume the deploy role.
