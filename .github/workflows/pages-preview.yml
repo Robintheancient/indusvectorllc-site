@@ -1,0 +1,49 @@
+name: Preview on GitHub Pages
+
+# Preview copy of the site at https://robintheancient.github.io/indusvectorllc-site/
+# The real site (indusvectorllc.com) is deployed by deploy.yml to AWS.
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages-preview.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: Rewrite root links for the /indusvectorllc-site/ path
+        run: |
+          mkdir _preview
+          cp -r site/. _preview/
+          find _preview -name '*.html' -print0 | xargs -0 sed -i \
+            -e 's#href="/#href="/indusvectorllc-site/#g' \
+            -e 's#src="/#src="/indusvectorllc-site/#g' \
+            -e 's#<head>#<head>\n  <meta name="robots" content="noindex">#'
+          rm -f _preview/robots.txt _preview/sitemap.xml _preview/images/README.md
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _preview
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
