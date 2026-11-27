@@ -10,7 +10,7 @@ Metadata:
       - Label: { default: "Website" }
         Parameters: [DomainName, BucketName, CertificateArn, ProjectTag]
       - Label: { default: "GitHub deploys" }
-        Parameters: [GitHubRepo, GitHubBranch, CreateGitHubOIDCProvider]
+        Parameters: [GitHubRepo, GitHubSubject, GitHubBranch, CreateGitHubOIDCProvider]
 
 Parameters:
   DomainName:
@@ -31,6 +31,12 @@ Parameters:
     Type: String
     Default: Robintheancient/indusvectorllc-site
     Description: owner/repo allowed to deploy.
+  GitHubSubject:
+    Type: String
+    Default: Robintheancient@181363031/indusvectorllc-site@1473892884
+    Description: >-
+      The repo part of the GitHub OIDC "sub" claim. GitHub now puts the owner and repo IDs in it
+      (owner@ownerId/repo@repoId). Using the IDs means a deleted-and-recreated repo with the same name cannot deploy.
   GitHubBranch:
     Type: String
     Default: main
@@ -272,7 +278,7 @@ Resources:
             Condition:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepo}:ref:refs/heads/${GitHubBranch}"
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubSubject}:ref:refs/heads/${GitHubBranch}"
       Policies:
         - PolicyName: deploy-site
           PolicyDocument:
